@@ -5,6 +5,7 @@
         <link rel="stylesheet" type="text/css" href="geoext/resources/css/popup.css">
         <script type="text/javascript" src="ext/adapter/ext/ext-base.js"></script>
         <script type="text/javascript" src="ext/ext-all.js"></script>
+        <script src="http://maps.google.com/maps/api/js?v=3&amp;sensor=false"></script>
         <script src="openlayers/lib/OpenLayers.js"></script>
         <script type="text/javascript" src="geoext/lib/GeoExt.js"></script>
 
@@ -30,12 +31,35 @@
                 controls: controls
             },
             layers: [
-            new OpenLayers.Layer.WMS(
-                "Tehsils",
-                "http://localhost:8080/geoserver/wms",
-                {layers: "haryana_tehsils"},
-                {isBaseLayer: false}
-            )]
+            new OpenLayers.Layer.WMS("Global Imagery",
+                    "http://maps.opengeo.org/geowebcache/service/wms", {
+                        layers: "bluemarble",
+                        format: "image/png8"
+                    }, {
+                        buffer: 0,
+                        visibility: false
+                    }
+                ),
+                new OpenLayers.Layer.WMS("OpenStreetMap WMS",
+                    "http://ows.terrestris.de/osm/service?",
+                    {layers: 'OSM-WMS'},
+                    {
+                        attribution: '&copy; terrestris GmbH & Co. KG <br>' +
+                            'Data &copy; OpenStreetMap ' +
+                            '<a href="http://www.openstreetmap.org/copyright/en"' +
+                            'target="_blank">contributors<a>'
+                    }
+                ),
+                new OpenLayers.Layer.WMS("Tehsils",
+                    "http://localhost:8080/geoserver/harayanatehsils/wms", {
+                        layers: "harayanatehsils:haryana_tehsils",
+                        transparent: true,
+                        format: "image/png"
+                    }, {
+                        isBaseLayer: false,
+                        buffer: 0
+                    }
+                )]
         });
         controls.push(
             new OpenLayers.Control.Navigation(),
@@ -48,7 +72,7 @@
             ref: "capsGrid", // makes the grid available as app.capsGrid
             title: "Available Layers",
             region: "north",
-            height: 200,
+            height: 120,
             viewConfig: {forceFit: true},
             store: new GeoExt.data.WMSCapabilitiesStore({
                 url: "http://localhost:8080/geoserver/wms?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.1.1",
@@ -314,17 +338,40 @@
             bbar.add([{
                 text: "Delete",
                 handler: function() {
+                    app.featureGrid.store.featureFilter = new OpenLayers.Filter({
+                        evaluate: function(feature) {
+                            return feature.state != OpenLayers.State.DELETE;
+                        }
+                    });
                     app.featureGrid.getSelectionModel().each(function(rec) {
                         var feature = rec.getFeature();
                         modifyControl.unselectFeature(feature);
                         vectorLayer.removeFeatures([feature]);
+                        if (feature.state != OpenLayers.State.INSERT) {
+                            feature.state = OpenLayers.State.DELETE;
+                            vectorLayer.addFeatures([feature]);
+                        }
                     });
                 }
             }, new GeoExt.Action({
                 control: drawControl,
                 text: "Create",
                 enableToggle: true
-            })]);
+            }), {
+                text: "Save",
+                handler: function() {
+                    app.featureGrid.store.proxy.protocol.commit(
+                        vectorLayer.features, {
+                            callback: function() {
+                                var layers = app.mapPanel.map.layers;
+                                for (var i=layers.length-1; i>=0; --i) {
+                                    layers[i].redraw(true);
+                                }
+                                app.featureGrid.store.reload();
+                            }
+                    });
+                }
+            }]);
             bbar.doLayout();
         });                                    
         </script>

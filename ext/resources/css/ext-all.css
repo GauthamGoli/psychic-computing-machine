@@ -2411,16 +2411,16 @@ td.x-grid3-hd-over .x-grid3-hd-inner, td.sort-desc .x-grid3-hd-inner, td.sort-as
 
 /* Selection Styles */
 .x-grid3-row-selected {
-	border:1px dotted;
+	border:3px dotted;
 }
 
 .x-grid3-locked td.x-grid3-row-marker, .x-grid3-locked .x-grid3-row-selected td.x-grid3-row-marker{
     background: repeat-x 0 bottom !important;
     vertical-align:middle !important;
     padding:0;
-    border-top:1px solid;
+    border-top:2px solid;
     border-bottom:none !important;
-    border-right:1px solid !important;
+    border-right:2px solid !important;
     text-align:center;
 }
 
@@ -5938,7 +5938,7 @@ td.grid-hd-group-cell {
 }
 
 .x-grid3-row-selected {
-	background-color: #dfe8f6 !important;
+	background-color: #9ca2ac !important;
 	background-image: none;
 	border-color:#a3bae9;
 }

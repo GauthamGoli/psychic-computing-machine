@@ -1,356 +1,193 @@
+
+<!DOCTYPE html>
 <html>
     <head>
-        <title>GeoExt Workshop Application</title>
-        <link rel="stylesheet" type="text/css" href="ext/resources/css/ext-all.css">
-        <link rel="stylesheet" type="text/css" href="geoext/resources/css/popup.css">
-        <script type="text/javascript" src="ext/adapter/ext/ext-base.js"></script>
-        <script type="text/javascript" src="ext/ext-all.js"></script>
-        <script src="http://maps.google.com/maps/api/js?v=3&amp;sensor=false"></script>
-        <script src="openlayers/lib/OpenLayers.js"></script>
-        <script type="text/javascript" src="geoext/lib/GeoExt.js"></script>
+        <title>OpenLayers Cookbook - Antonio Santiago</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
+        <!-- Dojo -->
         <script type="text/javascript">
-        
-
-        
-        var app, items = [], controls = [];
-
-        Ext.onReady(function() {
-            app = new Ext.Viewport({
-                layout: "border",
-                items: items
-            });
-        });
-
-        items.push({
-            xtype: "gx_mappanel",
-            ref: "mapPanel",
-            region: "center",
-            map: {
-                numZoomLevels: 19,
-                controls: controls
-            },
-            layers: [
-            new OpenLayers.Layer.WMS("Global Imagery",
-                    "http://maps.opengeo.org/geowebcache/service/wms", {
-                        layers: "bluemarble",
-                        format: "image/png8"
-                    }, {
-                        buffer: 0,
-                        visibility: false
-                    }
-                ),
-                new OpenLayers.Layer.WMS("OpenStreetMap WMS",
-                    "http://ows.terrestris.de/osm/service?",
-                    {layers: 'OSM-WMS'},
-                    {
-                        attribution: '&copy; terrestris GmbH & Co. KG <br>' +
-                            'Data &copy; OpenStreetMap ' +
-                            '<a href="http://www.openstreetmap.org/copyright/en"' +
-                            'target="_blank">contributors<a>'
-                    }
-                ),
-                new OpenLayers.Layer.WMS("Tehsils",
-                    "http://localhost:8080/geoserver/harayanatehsils/wms", {
-                        layers: "harayanatehsils:haryana_tehsils",
-                        transparent: true,
-                        format: "image/png"
-                    }, {
-                        isBaseLayer: false,
-                        buffer: 0
-                    }
-                )]
-        });
-        controls.push(
-            new OpenLayers.Control.Navigation(),
-            new OpenLayers.Control.Attribution(),
-            new OpenLayers.Control.PanPanel(),
-            new OpenLayers.Control.ZoomPanel()
-        );
-        items.push({
-            xtype: "grid",
-            ref: "capsGrid", // makes the grid available as app.capsGrid
-            title: "Available Layers",
-            region: "north",
-            height: 120,
-            viewConfig: {forceFit: true},
-            store: new GeoExt.data.WMSCapabilitiesStore({
-                url: "http://localhost:8080/geoserver/wms?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.1.1",
-                autoLoad: true
-            }),
-            columns: [
-                {header: "Name", dataIndex: "name", sortable: true},
-                {header: "Title", dataIndex: "title", sortable: true},
-                {header: "Abstract", dataIndex: "abstract"}
-            ],
-            bbar: [{
-                text: "Add to Map",
-                handler: function() {
-                    app.capsGrid.getSelectionModel().each(function(record) {
-                        var clone = record.clone();
-                        clone.getLayer().mergeNewParams({
-                            format: "image/png",
-                            transparent: true
-                        });
-                        app.mapPanel.layers.add(clone);
-                        app.mapPanel.map.zoomToExtent(
-                            OpenLayers.Bounds.fromArray(clone.get("llbbox"))
-                        );
-                    });
-                }
-            }]            
-        });   
-
-        items.push({
-            xtype: "treepanel",
-            ref: "tree",
-            region: "west",
-            width: 200,
-            autoScroll: true,
-            enableDD: true,
-            root: new GeoExt.tree.LayerContainer({
-                expanded: true
-            }),
-            bbar: [{
-                text: "Remove from Map",
-                handler: function() {
-                    var node = app.tree.getSelectionModel().getSelectedNode();
-                    if (node && node.layer instanceof OpenLayers.Layer.WMS) {
-                        app.mapPanel.map.removeLayer(node.layer);
-                    }
-                }
-            }]
-        });
-
-        items.push({
-            xtype: "gx_legendpanel",
-            region: "east",
-            width: 200,
-            autoScroll: true,
-            padding: 5
-        });
-
-
-
-        items.push({
-            xtype: "editorgrid",
-            ref: "featureGrid",
-            title: "Feature Table",
-            region: "south",
-            height: 150,
-            sm: new GeoExt.grid.FeatureSelectionModel(),
-            store: new GeoExt.data.FeatureStore({
-                fields: [
-                    {name: "ENGTYPE_3", type: "string"},
-                    {name: "NAME_0", type: "string"},
-                    {name: "NAME_1", type: "string"},
-                    {name: "NAME_2", type: "string"},
-                    {name: "NAME_3", type: "string"},
-                    {name: "ID_0", type: "int"}                    
-                ],
-                proxy: new GeoExt.data.ProtocolProxy({
-                    protocol: new OpenLayers.Protocol.WFS({
-                        url: "http://localhost:8080/geoserver/ows",
-                        version: "1.1.0",
-                        featureType: "haryana_tehsils",
-                        featureNS: "http://opengeo.org/nyc",
-                        srsName: "EPSG:4326"
-                    })
-                }),
-                autoLoad: true
-            }),
-            columns: [
-                {header: "ENGTYPE_3", dataIndex: "ENGTYPE_3", editor: {xtype: "textfield"}},
-                {header: "NAME_0", dataIndex: "NAME_0", editor: {xtype: "textfield"}},
-                {header: "NAME_1", dataIndex: "NAME_1", editor: {xtype: "textfield"}},
-                {header: "NAME_2", dataIndex: "NAME_2", editor: {xtype: "textfield"}},
-                {header: "NAME_3", dataIndex: "NAME_3", editor: {xtype: "textfield"}},
-                {xtype: "numbercolumn", header: "ID_0", dataIndex: "ID_0", editor: {xtype: "numberfield"}}
-            ],
-            bbar: []
-        });
-
-        var vectorLayer = new OpenLayers.Layer.Vector("Editable features");
-        Ext.onReady(function() {
-            app.mapPanel.map.addLayer(vectorLayer);
-            app.featureGrid.store.bind(vectorLayer);
-            app.featureGrid.getSelectionModel().bind(vectorLayer);
-        });
-
-        var rawAttributeData;
-        var read = OpenLayers.Format.WFSDescribeFeatureType.prototype.read;
-        OpenLayers.Format.WFSDescribeFeatureType.prototype.read = function() {
-            rawAttributeData = read.apply(this, arguments);
-            return rawAttributeData;
-        };
-
-        function reconfigure(store, url) {
-            var fields = [], columns = [], geometryName, geometryType;
-            // regular expression to detect the geometry column
-            var geomRegex = /gml:(Multi)?(Point|Line|Polygon|Surface|Geometry).*/;
-            // mapping of xml schema data types to Ext JS data types
-            var types = {
-                "xsd:int": "int",
-                "xsd:short": "int",
-                "xsd:long": "int",
-                "xsd:string": "string",
-                "xsd:dateTime": "string",
-                "xsd:double": "float",
-                "xsd:decimal": "float",
-                "Line": "Path",
-                "Surface": "Polygon"
+            // Define some Dojo configuration
+            var dojoConfig = {
+                async: true,
+                parseOnLoad: true,
+                idDebug: true
             };
-            store.each(function(rec) {
-                var type = rec.get("type");
-                var name = rec.get("name");
-                var match = geomRegex.exec(type);
-                if (match) {
-                    // we found the geometry column
-                    geometryName = name;
-                    // Geometry type for the sketch handler:
-                    // match[2] is "Point", "Line", "Polygon", "Surface" or "Geometry"
-                    geometryType = types[match[2]] || match[2];
-                } else {
-                    // we have an attribute column
-                    fields.push({
-                        name: name,
-                        type: types[type]
-                    });
-                    columns.push({
-                        xtype: types[type] == "string" ?
-                            "gridcolumn" :
-                            "numbercolumn",
-                        dataIndex: name,
-                        header: name,
-                        // textfield editor for strings, numberfield for others
-                        editor: {
-                            xtype: types[type] == "string" ?
-                                "textfield" :
-                                "numberfield"
-                        }
-                    });
-                }
-            });
-            app.featureGrid.reconfigure(new GeoExt.data.FeatureStore({
-                autoLoad: true,
-                proxy: new GeoExt.data.ProtocolProxy({
-                    protocol: new OpenLayers.Protocol.WFS({
-                        url: url,
-                        version: "1.1.0",
-                        featureType: rawAttributeData.featureTypes[0].typeName,
-                        featureNS: rawAttributeData.targetNamespace,
-                        srsName: "EPSG:4326",
-                        geometryName: geometryName,
-                        maxFeatures: 250
-                    })
-                }),
-                fields: fields
-            }), new Ext.grid.ColumnModel(columns));
-            app.featureGrid.store.bind(vectorLayer);
-            app.featureGrid.getSelectionModel().bind(vectorLayer);
-
-            // Set the correct sketch handler according to the geometryType
-            drawControl.handler = new OpenLayers.Handler[geometryType](
-                drawControl, drawControl.callbacks, drawControl.handlerOptions
-            );
-        }
-        
-        function setLayer(model, node) {
-            if(!node || node.layer instanceof OpenLayers.Layer.Vector) {
-                return;
-            }
-            vectorLayer.removeAllFeatures();
-            app.featureGrid.reconfigure(
-                new Ext.data.Store(),
-                new Ext.grid.ColumnModel([])
-            );
-            var layer = node.layer;
-            var url = layer.url.split("?")[0]; // the base url without params
-            var schema = new GeoExt.data.AttributeStore({
-                url: url,
-                // request specific params
-                baseParams: {
-                    "SERVICE": "WFS",
-                    "REQUEST": "DescribeFeatureType",
-                    "VERSION": "1.1.0",
-                    "TYPENAME": layer.params.LAYERS
-                },
-                autoLoad: true,
-                listeners: {
-                    "load": function(store) {
-                        app.featureGrid.setTitle(layer.name);
-                        reconfigure(store, url);
-                    }
-                }
-            });
-        }
-
-        Ext.onReady(function() {
-            app.tree.getSelectionModel().on(
-                "selectionchange", setLayer
-            );
-        });   
-        
-        var modifyControl = new OpenLayers.Control.ModifyFeature(
-            vectorLayer, {autoActivate: true}
-        );
-        var drawControl = new OpenLayers.Control.DrawFeature(
-            vectorLayer,
-            OpenLayers.Handler.Polygon,
-            {handlerOptions: {multi: true}}
-        );
-        controls.push(modifyControl, drawControl);      
-
-        Ext.onReady(function() {
-            var sm = app.featureGrid.getSelectionModel();
-            sm.unbind();
-            sm.bind(modifyControl.selectControl);
-            sm.on("beforerowselect", function() { sm.clearSelections(); });
-        });
-
-        Ext.onReady(function() {
-            var bbar = app.featureGrid.getBottomToolbar();
-            bbar.add([{
-                text: "Delete",
-                handler: function() {
-                    app.featureGrid.store.featureFilter = new OpenLayers.Filter({
-                        evaluate: function(feature) {
-                            return feature.state != OpenLayers.State.DELETE;
-                        }
-                    });
-                    app.featureGrid.getSelectionModel().each(function(rec) {
-                        var feature = rec.getFeature();
-                        modifyControl.unselectFeature(feature);
-                        vectorLayer.removeFeatures([feature]);
-                        if (feature.state != OpenLayers.State.INSERT) {
-                            feature.state = OpenLayers.State.DELETE;
-                            vectorLayer.addFeatures([feature]);
-                        }
-                    });
-                }
-            }, new GeoExt.Action({
-                control: drawControl,
-                text: "Create",
-                enableToggle: true
-            }), {
-                text: "Save",
-                handler: function() {
-                    app.featureGrid.store.proxy.protocol.commit(
-                        vectorLayer.features, {
-                            callback: function() {
-                                var layers = app.mapPanel.map.layers;
-                                for (var i=layers.length-1; i>=0; --i) {
-                                    layers[i].redraw(true);
-                                }
-                                app.featureGrid.store.reload();
-                            }
-                    });
-                }
-            }]);
-            bbar.doLayout();
-        });                                    
         </script>
+        <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.8.0/dojo/dojo.js"></script>
+        <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.8.0/dijit/themes/claro/claro.css"/>
+        <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.8.0/dijit/themes/claro/document.css"/>
+
+        <!-- OpenLayers -->
+        <script type="text/javascript" src="http://www.acuriousanimal.com/Openlayers-Cookbook/js/OpenLayers-2.12/OpenLayers.js"></script>
+        <link rel="stylesheet" href="http://www.acuriousanimal.com/Openlayers-Cookbook/js/OpenLayers-2.12/theme/default/style.css" type="text/css">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" type="text/css" href="http://www.acuriousanimal.com/Openlayers-Cookbook/css/cookbook.css"> 
+
     </head>
-    <body>
-    </body>
+
+<style>
+    table.tm {
+        width: 100%;
+        height: 100%;
+    }
+    table.tm td.left, table.tm td.right {
+        border: 1px solid #ccc;
+        margin: 0;
+        padding: 0;
+    }
+
+    table.tm td.left {
+        width: 75%;
+    }
+    table.tm td.right {
+        width: 25%;
+        vertical-align: top;
+        padding: 5px;
+    }
+    table.tb {
+        border: 0;
+
+    }
+</style>
+<table class="tm">
+    <tr>
+        <td class="right">
+            <p>Select:</p>
+
+            <table class="tb">
+                <tr>
+                    <td>Select District:</td>
+                    <td>
+                        <select id="distSelection" data-dojo-type="dijit/form/Select" onChange="vilChange()">
+                            <option value="Ambala-0">Ambala</option>
+                            <option value="Bhiwani-1">Bhiwani</option>
+                            <option value="Faridabad-2">Faridabad</option>
+                            <option value="Fatehabad-3">Fatehabad</option>
+                            <option value="Gurgaon-4">Gurgaon</option>
+                            <option value="Hisar-5">Hisar</option>
+                            <option value="Jhajjar-6">Jhajjar</option>
+                            <option value="Jind-7">Jind</option>
+                            <option value="Kaithal">Kaithal</option>
+                            <option value="Karnal">Karnal</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Select Village:</td>
+                    <td>
+                        <select id="vilSelection" data-dojo-type="dijit/form/Select">
+                            <option value="Ambala">Ambala</option>
+                            <option value="Bharara">Bharara</option>
+                            <option value="Naraingarh">Naraingarh</option>                            
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Select Feature:</td>
+                    <td>
+                        <select id="featureSelection" data-dojo-type="dijit/form/Select">
+                            <option value="agriculture">Agriculture Land</option>
+                            <option value="graveyard">Graveyard</option>
+                            <option value="idgah">Idgah</option>
+                            <option value="khankaha">Khankaha</option>
+                            <option value="mosque">Mosque/Others</option>
+                            <option value="imambara">Imambara</option>
+                            <option value="pond">Pond</option>
+                            <option value="madarasa">Madarasa</option>
+                            <option value="plot">House/Plot</option>
+                        </select>
+                    </td>
+                </tr>
+            </table>
+
+            <table class="tb">
+                <tr>
+                    <p>Info:</p>
+                </tr>
+                
+
+            </table>
+
+        </td>
+        <td class="left">
+            <div id="ch1_managing_layers" style="width: 100%; height: 500px;"></div>
+        </td>
+    </tr>
+</table>
+
+
+<!-- The magic comes here -->
+<script type="text/javascript">
+    
+    function vilChange(){
+        district = document.getElementById("distSelection").value.split('-')[0];
+        index = document.getElementById("distSelection").value.split('-')[1];
+        ambala = `
+               <option value="Bharara">Bharara</option>
+               <option value="Naraingarh">Naraingarh</option>
+               <option value="Ambala">Ambala</option>
+               `;
+        bandhra = `
+                <option value="Bandhra">Bandhra</option>
+                <option value="Bhawani Kehra">Bhawani Kehra</option>
+                <option value="Bhiwani">Bhiwani</option>
+                <option value="Loharu">Dadri</option>
+                <option value="Shiwani">Shiwani</option>
+                <option value="Tosham">Tosham</option>
+                `;
+        villages = [ambala, bandhra];
+
+        document.getElementById("vilSelection").innerHTML=villages[index];
+    }
+
+    // Create the map using the specified DOM element
+    var map = new OpenLayers.Map("ch1_managing_layers", {
+        allOverlays: true
+    });
+
+    // Add some OSM based layers using an array of URL sources
+    var arrayOSM = ["http://otile1.mqcdn.com/tiles/1.0.0/osm/${z}/${x}/${y}.jpg",
+        "http://otile2.mqcdn.com/tiles/1.0.0/osm/${z}/${x}/${y}.jpg",
+        "http://otile3.mqcdn.com/tiles/1.0.0/osm/${z}/${x}/${y}.jpg",
+        "http://otile4.mqcdn.com/tiles/1.0.0/osm/${z}/${x}/${y}.jpg"];
+    var arrayAerial = ["http://oatile1.mqcdn.com/tiles/1.0.0/sat/${z}/${x}/${y}.jpg",
+        "http://oatile2.mqcdn.com/tiles/1.0.0/sat/${z}/${x}/${y}.jpg",
+        "http://oatile3.mqcdn.com/tiles/1.0.0/sat/${z}/${x}/${y}.jpg",
+        "http://oatile4.mqcdn.com/tiles/1.0.0/sat/${z}/${x}/${y}.jpg"];
+
+    var baseAerial = new OpenLayers.Layer.OSM("MapQuest-Aerial", arrayAerial);
+    var baseOSM = new OpenLayers.Layer.OSM("MapQuest-OSM", arrayOSM, {opacity: 0.6});
+    map.addLayers([baseAerial, baseOSM]);
+
+    // Add LayerSwitcher control
+    map.addControl(new OpenLayers.Control.LayerSwitcher({ascending: false}));
+    // Center the view at some place
+    map.setCenter(new OpenLayers.LonLat(-100, 40), 4);
+        
+    // Button events
+    function raiseLayer() {
+        var layerName = dijit.byId('layerSelection').get('value');
+        var layer = map.getLayersByName(layerName)[0];
+        map.raiseLayer(layer, 1);
+    }
+    function lowerLayer() {
+        var layerName = dijit.byId('layerSelection').get('value');
+        var layer = map.getLayersByName(layerName)[0];
+        map.raiseLayer(layer, -1);
+    }
+    function topLayer() {
+        var layerName = dijit.byId('layerSelection').get('value');
+        var layer = map.getLayersByName(layerName)[0];
+        var lastIndex = map.getNumLayers()-1;
+        map.setLayerIndex(layer, lastIndex);
+    }
+    function bottomLayer() {
+        var layerName = dijit.byId('layerSelection').get('value');
+        var layer = map.getLayersByName(layerName)[0];
+        map.setLayerIndex(layer, 0);
+    }
+</script>
+
 </html>

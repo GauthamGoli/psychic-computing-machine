@@ -66,7 +66,7 @@
                 <tr>
                     <td><b>Select District:</b></td>
                     <td>
-                        <select id="distSelection" data-dojo-type="dijit/form/Select" onChange="vilChange()">
+                        <select id="distSelection" data-dojo-type="dijit/form/Select" onChange="distChange()">
                             <option value="Ambala-0">Ambala</option>
                             <option value="Bhiwani-1">Bhiwani</option>
                             <option value="Faridabad-4">Faridabad</option>
@@ -83,7 +83,7 @@
                 <tr>
                     <td><b>Select Village:</b></td>
                     <td>
-                        <select id="vilSelection" data-dojo-type="dijit/form/Select">
+                        <select id="vilSelection" data-dojo-type="dijit/form/Select" onChange="vilChange()">
                             <option value="Ambala">Ambala</option>
                             <option value="Bharara">Bharara</option>
                             <option value="Naraingarh">Naraingarh</option>                            
@@ -126,9 +126,9 @@
 
 <!-- The magic comes here -->
 <script type="text/javascript">
-    
-    function vilChange(){
-        var gurgaon_layer = new OpenLayers.Layer.WMS("gurgaon",
+    active_layers = [];
+    function distChange(){
+        gurgaon_layer = new OpenLayers.Layer.WMS("gurgaon",
                     "http://localhost:8080/geoserver/gurgaon/wms", {
                         layers: "gurgaon:Gurgaon",
                         transparent: true,
@@ -138,7 +138,6 @@
                         buffer: 0
                     }
                 );
-
         district = document.getElementById("distSelection").value.split('-')[0];
         index = document.getElementById("distSelection").value.split('-')[1];
         ambala = `
@@ -161,13 +160,28 @@
                 `;                
 
         villages = [ambala, bandhra, gurgaon];
-        if(district=='Ambala'){
-            map.addLayers([ambala_layer]);
+        console.log(active_layers);
+        for(var i = 0;i<active_layers.length;i++){
+            map.removeLayer(active_layers[i]);
+        }
+        active_layers = [];
+        switch(district){
+            case 'Gurgaon':
+                map.addLayers([gurgaon_layer]);
+                active_layers.push(gurgaon_layer);
+                break;
+            case 'Ambala':
+                console.log("Ambala");
+                break;
+
         }
         document.getElementById("vilSelection").innerHTML=villages[index];
 
     }
 
+    function vilChange(){
+        
+    }
     // Create the map using the specified DOM element
     var map = new OpenLayers.Map("ch1_managing_layers", {
         allOverlays: true
@@ -183,7 +197,7 @@
         "http://oatile3.mqcdn.com/tiles/1.0.0/sat/${z}/${x}/${y}.jpg",
         "http://oatile4.mqcdn.com/tiles/1.0.0/sat/${z}/${x}/${y}.jpg"];
 
-    var baseAerial =new OpenLayers.Layer.WMS("Global Imagery",
+    var baseAerial = new OpenLayers.Layer.WMS("Global Imagery",
                     "http://maps.opengeo.org/geowebcache/service/wms", {
                         layers: "bluemarble",
                         format: "image/png8"
@@ -214,7 +228,7 @@
                 );
 
     info = new OpenLayers.Control.WMSGetFeatureInfo({
-            url: 'http://localhost:8080/geoserver/harayanatehsils/wms', 
+            url: 'http://localhost:8080/geoserver/harayanatehsils/wms',
             title: 'Identify features by clicking',
             queryVisible: true,
             eventListeners: {

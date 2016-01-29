@@ -265,13 +265,20 @@
     map.addControl(new OpenLayers.Control.LayerSwitcher({ascending: false}));
     map.addControl(info);
     info.activate();
-
+    var mousePositionCtrl = new OpenLayers.Control.MousePosition({
+        prefix: '<a target="_blank" ' +
+            'href="http://spatialreference.org/ref/epsg/4326/">' +
+            'EPSG:4326</a><b> coordinates: '
+        }
+    );
+    map.addControl(mousePositionCtrl);
+    mousePositionCtrl.activate();
     map.addControl(control);
     control.activate();    
     var vector_style = new OpenLayers.Style({
             'fillColor': '#ff0000',
             'strokeColor': '#ff0000',
-            'strokeWidth': 10
+            'strokeWidth': 4
             });
 
     var vector_style_map = new OpenLayers.StyleMap({

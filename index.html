@@ -128,9 +128,9 @@
 <script type="text/javascript">
     active_layers = [];
     function distChange(){
-        gurgaon_layer = new OpenLayers.Layer.WMS("gurgaon",
-                    "http://localhost:8080/geoserver/gurgaon/wms", {
-                        layers: "gurgaon:Gurgaon",
+        gurgaon_layer = new OpenLayers.Layer.WMS("harayana",
+                    "http://localhost:8080/geoserver/harayana/wms", {
+                        layers: "harayana:harayana",
                         transparent: true,
                         format: "image/png"
                     }, {
@@ -217,8 +217,8 @@
                     }
                 );
     ambala_layer = new OpenLayers.Layer.WMS("Tehsils",
-                    "http://localhost:8080/geoserver/harayanatehsils/wms", {
-                        layers: "harayanatehsils:haryana_tehsils",
+                    "http://localhost:8080/geoserver/nyc_roads/wms", {
+                        layers: "nyc_roads:nyc_roads",
                         transparent: true,
                         format: "image/png"
                     }, {
@@ -228,7 +228,7 @@
                 );
 
     info = new OpenLayers.Control.WMSGetFeatureInfo({
-            url: 'http://localhost:8080/geoserver/harayanatehsils/wms',
+            url: 'http://localhost:8080/geoserver/nyc_roads/wms',
             title: 'Identify features by clicking',
             queryVisible: true,
             eventListeners: {
@@ -240,13 +240,47 @@
                 }
             }
         });
+    select = new OpenLayers.Layer.Vector("Selection", {
+        styleMap: new OpenLayers.Style(OpenLayers.Feature.Vector.style["select"])
+    });
 
-    map.addLayers([baseAerial, baseOSM]);
+//http://gis.stackexchange.com/questions/66738/how-can-i-do-feature-selection-on-wms-layer-added-jsfiddle-example
 
+    map.addLayers([baseAerial, baseOSM, ambala_layer, select]);
+
+    control = new OpenLayers.Control.GetFeature({
+        protocol: OpenLayers.Protocol.WFS.fromWMSLayer(ambala_layer),
+        box: true,
+        
+        multipleKey: "shiftKey",
+        toggleKey: "ctrlKey"
+    });
+
+    control.events.register("featureselected", this, function (e) {
+        select.addFeatures([e.feature]);
+    });
+    control.events.register("featureunselected", this, function (e) {
+        select.removeFeatures([e.feature]);
+    });
     // Add LayerSwitcher control
     map.addControl(new OpenLayers.Control.LayerSwitcher({ascending: false}));
     map.addControl(info);
     info.activate();
+
+    map.addControl(control);
+    control.activate();    
+    var vector_style = new OpenLayers.Style({
+            'fillColor': '#ff0000',
+            'strokeColor': '#ff0000',
+            'strokeWidth': 10
+            });
+
+    var vector_style_map = new OpenLayers.StyleMap({
+            'default': vector_style
+            });
+
+    //set the style for both the Hover & Select
+    select.styleMap = vector_style_map;
     // Center the view at some place
     map.setCenter(new OpenLayers.LonLat(-100, 40), 4);
         

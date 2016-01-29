@@ -50,6 +50,12 @@
         border: 0;
 
     }
+    body > table > tbody > tr > td.right > p:nth-child(1){
+        font-size: 1.5em;
+    }
+    body > table > tbody > tr > td.right > div > p{
+        font-size: 1.5em;
+    }
 </style>
 <table class="tm">
     <tr>
@@ -58,14 +64,14 @@
 
             <table class="tb">
                 <tr>
-                    <td>Select District:</td>
+                    <td><b>Select District:</b></td>
                     <td>
                         <select id="distSelection" data-dojo-type="dijit/form/Select" onChange="vilChange()">
                             <option value="Ambala-0">Ambala</option>
                             <option value="Bhiwani-1">Bhiwani</option>
-                            <option value="Faridabad-2">Faridabad</option>
+                            <option value="Faridabad-4">Faridabad</option>
                             <option value="Fatehabad-3">Fatehabad</option>
-                            <option value="Gurgaon-4">Gurgaon</option>
+                            <option value="Gurgaon-2">Gurgaon</option>
                             <option value="Hisar-5">Hisar</option>
                             <option value="Jhajjar-6">Jhajjar</option>
                             <option value="Jind-7">Jind</option>
@@ -75,7 +81,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td>Select Village:</td>
+                    <td><b>Select Village:</b></td>
                     <td>
                         <select id="vilSelection" data-dojo-type="dijit/form/Select">
                             <option value="Ambala">Ambala</option>
@@ -85,7 +91,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td>Select Feature:</td>
+                    <td><b>Select Feature:</b></td>
                     <td>
                         <select id="featureSelection" data-dojo-type="dijit/form/Select">
                             <option value="agriculture">Agriculture Land</option>
@@ -102,13 +108,13 @@
                 </tr>
             </table>
 
-            <table class="tb">
-                <tr>
-                    <p>Info:</p>
-                </tr>
+
+            <div class="tb">
+                <p> Info: </p>
+                <iframe id="info"></iframe>
                 
 
-            </table>
+            </div>
 
         </td>
         <td class="left">
@@ -122,6 +128,17 @@
 <script type="text/javascript">
     
     function vilChange(){
+        var gurgaon_layer = new OpenLayers.Layer.WMS("gurgaon",
+                    "http://localhost:8080/geoserver/gurgaon/wms", {
+                        layers: "gurgaon:Gurgaon",
+                        transparent: true,
+                        format: "image/png"
+                    }, {
+                        isBaseLayer: false,
+                        buffer: 0
+                    }
+                );
+
         district = document.getElementById("distSelection").value.split('-')[0];
         index = document.getElementById("distSelection").value.split('-')[1];
         ambala = `
@@ -137,9 +154,18 @@
                 <option value="Shiwani">Shiwani</option>
                 <option value="Tosham">Tosham</option>
                 `;
-        villages = [ambala, bandhra];
+        gurgaon = `
+                <option value="Farrukhnagar">Farrukhnagar</option>
+                <option value="gurgaon">Gurgaon</option>
+                <option value="Manesar">Manesar</option>
+                `;                
 
+        villages = [ambala, bandhra, gurgaon];
+        if(district=='Ambala'){
+            map.addLayers([ambala_layer]);
+        }
         document.getElementById("vilSelection").innerHTML=villages[index];
+
     }
 
     // Create the map using the specified DOM element
@@ -157,37 +183,60 @@
         "http://oatile3.mqcdn.com/tiles/1.0.0/sat/${z}/${x}/${y}.jpg",
         "http://oatile4.mqcdn.com/tiles/1.0.0/sat/${z}/${x}/${y}.jpg"];
 
-    var baseAerial = new OpenLayers.Layer.OSM("MapQuest-Aerial", arrayAerial);
-    var baseOSM = new OpenLayers.Layer.OSM("MapQuest-OSM", arrayOSM, {opacity: 0.6});
+    var baseAerial =new OpenLayers.Layer.WMS("Global Imagery",
+                    "http://maps.opengeo.org/geowebcache/service/wms", {
+                        layers: "bluemarble",
+                        format: "image/png8"
+                    }, {
+                        buffer: 0,
+                        visibility: false
+                    }
+                );
+    var baseOSM = new OpenLayers.Layer.WMS("OpenStreetMap WMS",
+                    "http://ows.terrestris.de/osm/service?",
+                    {layers: 'OSM-WMS'},
+                    {
+                        attribution: '&copy; terrestris GmbH & Co. KG <br>' +
+                            'Data &copy; OpenStreetMap ' +
+                            '<a href="http://www.openstreetmap.org/copyright/en"' +
+                            'target="_blank">contributors<a>'
+                    }
+                );
+    ambala_layer = new OpenLayers.Layer.WMS("Tehsils",
+                    "http://localhost:8080/geoserver/harayanatehsils/wms", {
+                        layers: "harayanatehsils:haryana_tehsils",
+                        transparent: true,
+                        format: "image/png"
+                    }, {
+                        isBaseLayer: false,
+                        buffer: 0
+                    }
+                );
+
+    info = new OpenLayers.Control.WMSGetFeatureInfo({
+            url: 'http://localhost:8080/geoserver/harayanatehsils/wms', 
+            title: 'Identify features by clicking',
+            queryVisible: true,
+            eventListeners: {
+                getfeatureinfo: function(event) {                    
+                    iframe = document.getElementById("info");
+                    iframe.contentWindow.document.open();
+                    iframe.contentWindow.document.write(event.text);
+                    iframe.contentWindow.document.close();
+                }
+            }
+        });
+
     map.addLayers([baseAerial, baseOSM]);
 
     // Add LayerSwitcher control
     map.addControl(new OpenLayers.Control.LayerSwitcher({ascending: false}));
+    map.addControl(info);
+    info.activate();
     // Center the view at some place
     map.setCenter(new OpenLayers.LonLat(-100, 40), 4);
         
-    // Button events
-    function raiseLayer() {
-        var layerName = dijit.byId('layerSelection').get('value');
-        var layer = map.getLayersByName(layerName)[0];
-        map.raiseLayer(layer, 1);
-    }
-    function lowerLayer() {
-        var layerName = dijit.byId('layerSelection').get('value');
-        var layer = map.getLayersByName(layerName)[0];
-        map.raiseLayer(layer, -1);
-    }
-    function topLayer() {
-        var layerName = dijit.byId('layerSelection').get('value');
-        var layer = map.getLayersByName(layerName)[0];
-        var lastIndex = map.getNumLayers()-1;
-        map.setLayerIndex(layer, lastIndex);
-    }
-    function bottomLayer() {
-        var layerName = dijit.byId('layerSelection').get('value');
-        var layer = map.getLayersByName(layerName)[0];
-        map.setLayerIndex(layer, 0);
-    }
+    
 </script>
 
 </html>

@@ -230,7 +230,10 @@
     }
     selected_features = [];
     function featureChange(){
-        select.removeFeatures(selected_features);
+        for(var j=0;j<selected_features.length;j++){
+            selectControl.unselect(selected_features[j]);
+        }
+        //select.removeFeatures(selected_features);
         district = document.getElementById("vilSelection").value.split('-')[0];
         var total_area = 0;
         var count = 0;
@@ -239,7 +242,7 @@
             if (village_features[i].attributes.Name == feature){
                 total_area += village_features[i].attributes.Shape_Area;
                 count +=1;
-                select.addFeatures([village_features[i]]);
+                selectControl.select(village_features[i]);
                 selected_features.push(village_features[i]);
             }
         }

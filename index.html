@@ -190,6 +190,7 @@
     function drawDistrict(resp){
         features = getFeatures(resp);
         district_layer.addFeatures(features);
+        map.zoomToExtent(district_layer.getDataExtent());
     }
 
     function getFeatures(geojson){
@@ -213,7 +214,7 @@
         resp_features = getFeatures(response);
         for(var i = 0 ; i< resp_features.length; i++){
             var feature = document.getElementById("featureSelection").value;
-            if (resp_features[i].attributes.Name == feature){
+            if (resp_features[i].attributes.Name.search(feature) != -1){
                 select.addFeatures([resp_features[i]]);
                 console.log(resp_test[i]);
             }
@@ -226,7 +227,7 @@
         switch(current_village){
             case "gurgaon":
                 console.log("I am here");
-                url = 'http://localhost:8080/geoserver/village/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=village:test&maxFeatures=50&outputFormat=application%2Fjson';
+                url = 'http://localhost:8080/geoserver/village2/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=village2:village2&maxFeatures=50&outputFormat=application%2Fjson';
                 break;
         }
         httpGetAsync(url, drawVillage);
@@ -235,7 +236,8 @@
     function drawVillage(resp){
         village_features = getFeatures(resp);
         district_layer.removeAllFeatures();
-        district_layer.addFeatures(features);
+        district_layer.addFeatures(village_features);
+        map.zoomToExtent(district_layer.getDataExtent());
     }
 
     function featureChange(){

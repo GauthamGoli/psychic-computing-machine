@@ -113,7 +113,9 @@
 
             <div class="tb">
                 <p> Info: </p>
-                <iframe id="info"></iframe>
+                <div id="info">
+                    
+                </div>
                 
 
             </div>
@@ -173,9 +175,6 @@
         switch(district){
             case 'Gurgaon':
                 url = 'http://localhost:8080/geoserver/harayana/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=harayana:haryan_state&maxFeatures=50&outputFormat=application%2Fjson';
-                //map.addLayers([gurgaon_layer]);
-                
-                //active_layers.push(gurgaon_layer);
                 break;
             case 'Ambala':
                 url = 'http://localhost:8080/geoserver/village/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=village:test&maxFeatures=50&outputFormat=application%2Fjson';
@@ -226,7 +225,6 @@
         current_village = document.getElementById("vilSelection").value;
         switch(current_village){
             case "gurgaon":
-                console.log("I am here");
                 url = 'http://localhost:8080/geoserver/village2/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=village2:village2&maxFeatures=50&outputFormat=application%2Fjson';
                 break;
         }
@@ -238,17 +236,49 @@
         district_layer.removeAllFeatures();
         district_layer.addFeatures(village_features);
         map.zoomToExtent(district_layer.getDataExtent());
+        addSelectController(district_layer);
     }
-
+    selected_features = [];
     function featureChange(){
+        select.removeFeatures(selected_features);
+        document.getElementById("info").innerHTML = '';
         district = document.getElementById("vilSelection").value.split('-')[0];
         for(var i =0;i<village_features.length; i++){
             var feature = document.getElementById("featureSelection").value;
             if (village_features[i].attributes.Name == feature){
                 select.addFeatures([village_features[i]]);
+                selected_features.push(village_features[i]);
             }
         }
     }
+    function addSelectController(layer){
+        selectControl = new OpenLayers.Control.SelectFeature(layer,
+        {
+            onSelect: onFeatureSelect,
+            onUnselect: onFeatureUnselect,
+            //hover: true
+        });
+        map.addControl(selectControl);
+        selectControl.activate();
+    }
+    function onFeatureSelect(feature){
+        available = feature.attributes;
+        
+        res_html = '';
+        for(key in available){
+            res_html += '<tr><td>'+key+':</td>'+'<td>'+available[key]+'</td>';
+        }
+        res_html = '<b><table>'+res_html+'</table></b>';
+
+        document.getElementById("info").innerHTML = res_html;
+        
+        
+    }
+
+    function onFeatureUnselect(feature){
+        console.log("unslected");
+    }
+
     // Create the map using the specified DOM element
     var map = new OpenLayers.Map("ch1_managing_layers", {
         allOverlays: true
@@ -320,8 +350,8 @@
     addSelectControl(map, ambala_vector);
         // Add LayerSwitcher control
     map.addControl(new OpenLayers.Control.LayerSwitcher({ascending: false}));
-    map.addControl(info);
-    info.activate();
+    //map.addControl(info);
+    //info.activate();
     var mousePositionCtrl = new OpenLayers.Control.MousePosition({
         prefix: '<a target="_blank" ' +
             'href="http://spatialreference.org/ref/epsg/4326/">' +

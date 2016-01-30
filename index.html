@@ -241,15 +241,22 @@
     selected_features = [];
     function featureChange(){
         select.removeFeatures(selected_features);
-        document.getElementById("info").innerHTML = '';
+        //document.getElementById("info").innerHTML = '';
         district = document.getElementById("vilSelection").value.split('-')[0];
+        var total_area = 0;
+        var count = 0;
         for(var i =0;i<village_features.length; i++){
             var feature = document.getElementById("featureSelection").value;
             if (village_features[i].attributes.Name == feature){
+                total_area += village_features[i].attributes.Shape_Area;
+                count +=1;
                 select.addFeatures([village_features[i]]);
                 selected_features.push(village_features[i]);
             }
         }
+        var res_html = '<tr><td> Count: </td><td>'+count.toString()+'</td></tr>';
+        res_html += '<tr><td> Total Area: </td><td>'+total_area.toString()+'</td></tr>';
+        document.getElementById("info").innerHTML ='<b><table>'+res_html+'</table></b>';
     }
     function addSelectController(layer){
         selectControl = new OpenLayers.Control.SelectFeature(layer,

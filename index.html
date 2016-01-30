@@ -246,16 +246,7 @@
                             'target="_blank">contributors<a>'
                     }
                 );
-    ambala_layer = new OpenLayers.Layer.WMS("Tehsils",
-                    "http://localhost:8080/geoserver/harayana/wms", {
-                        layers: "harayana:haryan_state",
-                        transparent: true,
-                        format: "image/png"
-                    }, {
-                        isBaseLayer: false,
-                        buffer: 0
-                    }
-                );
+
     ambala_vector = new OpenLayers.Layer.Vector("Tehsils",{
                         strategies: [new OpenLayers.Strategy.BBOX()],
                         protocol: new OpenLayers.Protocol.WFS({
@@ -289,7 +280,7 @@
     map.addLayers([baseAerial, baseOSM, ambala_vector, select]);
 
 
-    addSelectControl(map, ambala_layer);
+    addSelectControl(map, ambala_vector);
         // Add LayerSwitcher control
     map.addControl(new OpenLayers.Control.LayerSwitcher({ascending: false}));
     map.addControl(info);
@@ -320,7 +311,7 @@
     
     function addSelectControl(map,layer){
         control = new OpenLayers.Control.GetFeature({
-            protocol: OpenLayers.Protocol.WFS.fromWMSLayer(layer),        
+            protocol: new OpenLayers.Protocol.WFS(layer.protocol),        
             multipleKey: "shiftKey",
             toggleKey: "ctrlKey"
         });

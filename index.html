@@ -128,16 +128,24 @@
 <script type="text/javascript">
     active_layers = [];
     function distChange(){
-        gurgaon_layer = new OpenLayers.Layer.WMS("harayana",
-                    "http://localhost:8080/geoserver/harayana/wms", {
-                        layers: "harayana:harayana",
+        /*gurgaon_layer = new OpenLayers.Layer.WMS("testing",
+                    "http://localhost:8080/geoserver/testing/wms", {
+                        layers: "testing:testing",
                         transparent: true,
                         format: "image/png"
                     }, {
                         isBaseLayer: false,
                         buffer: 0
                     }
-                );
+                );*/
+        gurgaon_layer = new OpenLayers.Layer.Vector("WFS", {
+                            strategies: [new OpenLayers.Strategy.BBOX()],
+                            protocol: new OpenLayers.Protocol.WFS({
+                                url: "http://localhost:8080/geoserver/wfs",
+                                featureType: "testing",
+                                featureNS: "http://adsf.owr/asdfsd"
+                            })
+                        });
         district = document.getElementById("distSelection").value.split('-')[0];
         index = document.getElementById("distSelection").value.split('-')[1];
         ambala = `
@@ -154,7 +162,7 @@
                 <option value="Tosham">Tosham</option>
                 `;
         gurgaon = `
-                <option value="Farrukhnagar">Farrukhnagar</option>
+                <osmption value="Farrukhnagar">Farrukhnagar</option>
                 <option value="gurgaon">Gurgaon</option>
                 <option value="Manesar">Manesar</option>
                 `;                
@@ -168,7 +176,10 @@
         switch(district){
             case 'Gurgaon':
                 map.addLayers([gurgaon_layer]);
+                //addSelectControl(map, gurgaon_layer);
                 active_layers.push(gurgaon_layer);
+                httpGetAsync('http://localhost:8080/geoserver/testing/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=testing:testing&maxFeatures=50&outputFormat=application%2Fjson',
+                            storeVillageFeatures);
                 break;
             case 'Ambala':
                 console.log("Ambala");
@@ -177,6 +188,25 @@
         }
         document.getElementById("vilSelection").innerHTML=villages[index];
 
+    }
+    function httpGetAsync(theUrl, callback)
+    {
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.onreadystatechange = function() { 
+            if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+                callback(xmlHttp.responseText);
+        }
+        xmlHttp.open("GET", theUrl, true); // true for asynchronous 
+        xmlHttp.send(null);
+    }
+
+    function storeVillageFeatures(response){
+        resp_test = JSON.parse(response);
+        for(var i = 0 ; i< resp_test.features.length; i++){
+            if (resp_test.features[i].properties.Name.toLowerCase() == document.getElementById("featureSelection").value.toLowerCase()){
+
+            }
+        }
     }
 
     function vilChange(){
@@ -217,8 +247,8 @@
                     }
                 );
     ambala_layer = new OpenLayers.Layer.WMS("Tehsils",
-                    "http://localhost:8080/geoserver/nyc_roads/wms", {
-                        layers: "nyc_roads:nyc_roads",
+                    "http://localhost:8080/geoserver/harayana/wms", {
+                        layers: "harayana:haryan_state",
                         transparent: true,
                         format: "image/png"
                     }, {
@@ -226,9 +256,19 @@
                         buffer: 0
                     }
                 );
+    ambala_vector = new OpenLayers.Layer.Vector("Tehsils",{
+                        strategies: [new OpenLayers.Strategy.BBOX()],
+                        protocol: new OpenLayers.Protocol.WFS({
+                            version: "1.1.0",
+                            url: "http://localhost:8080/geoserver/wfs",
+                            featureType: "testing",
+                            featureNS:"http://adsf.owr/asdfsd",
+                            srsName: "EPSG:4326"
+                        })
+                    });
 
     info = new OpenLayers.Control.WMSGetFeatureInfo({
-            url: 'http://localhost:8080/geoserver/nyc_roads/wms',
+            url: 'http://localhost:8080/geoserver/harayana/wms',
             title: 'Identify features by clicking',
             queryVisible: true,
             eventListeners: {
@@ -246,22 +286,11 @@
 
 //http://gis.stackexchange.com/questions/66738/how-can-i-do-feature-selection-on-wms-layer-added-jsfiddle-example
 
-    map.addLayers([baseAerial, baseOSM, ambala_layer, select]);
+    map.addLayers([baseAerial, baseOSM, ambala_vector, select]);
 
-    control = new OpenLayers.Control.GetFeature({
-        protocol: OpenLayers.Protocol.WFS.fromWMSLayer(ambala_layer),        
-        multipleKey: "shiftKey",
-        toggleKey: "ctrlKey"
-    });
 
-    control.events.register("featureselected", this, function (e) {
-        console.log(e);
-        select.addFeatures([e.feature]);
-    });
-    control.events.register("featureunselected", this, function (e) {
-        select.removeFeatures([e.feature]);
-    });
-    // Add LayerSwitcher control
+    addSelectControl(map, ambala_layer);
+        // Add LayerSwitcher control
     map.addControl(new OpenLayers.Control.LayerSwitcher({ascending: false}));
     map.addControl(info);
     info.activate();
@@ -273,8 +302,7 @@
     );
     map.addControl(mousePositionCtrl);
     mousePositionCtrl.activate();
-    map.addControl(control);
-    control.activate();    
+
     var vector_style = new OpenLayers.Style({
             'fillColor': '#ff0000',
             'strokeColor': '#ff0000',
@@ -289,7 +317,26 @@
     select.styleMap = vector_style_map;
     // Center the view at some place
     map.setCenter(new OpenLayers.LonLat(-100, 40), 4);
-        
+    
+    function addSelectControl(map,layer){
+        control = new OpenLayers.Control.GetFeature({
+            protocol: OpenLayers.Protocol.WFS.fromWMSLayer(layer),        
+            multipleKey: "shiftKey",
+            toggleKey: "ctrlKey"
+        });
+
+        control.events.register("featureselected", this, function (e) {
+            console.log(e.feature);
+            console.log("comning here");
+            select.addFeatures([e.feature]);
+        });
+        control.events.register("featureunselected", this, function (e) {
+            select.removeFeatures([e.feature]);
+        });
+
+        map.addControl(control);
+        control.activate();
+    }
     
 </script>
 

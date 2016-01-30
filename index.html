@@ -209,16 +209,6 @@
         xmlHttp.send(null);
     }
 
-    function filterVillageFeatures(response){
-        resp_features = getFeatures(response);
-        for(var i = 0 ; i< resp_features.length; i++){
-            var feature = document.getElementById("featureSelection").value;
-            if (resp_features[i].attributes.Name.search(feature) != -1){
-                select.addFeatures([resp_features[i]]);
-                console.log(resp_test[i]);
-            }
-        }
-    }
 
     function vilChange(){
         console.log("Village change");
@@ -241,7 +231,6 @@
     selected_features = [];
     function featureChange(){
         select.removeFeatures(selected_features);
-        //document.getElementById("info").innerHTML = '';
         district = document.getElementById("vilSelection").value.split('-')[0];
         var total_area = 0;
         var count = 0;
@@ -277,8 +266,7 @@
         }
         res_html = '<b><table>'+res_html+'</table></b>';
 
-        document.getElementById("info").innerHTML = res_html;
-        
+        document.getElementById("info").innerHTML = res_html;       
         
     }
 

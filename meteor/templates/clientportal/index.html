@@ -1,0 +1,455 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>OpenLayers Cookbook - Antonio Santiago</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+        <!-- Dojo -->
+        <script type="text/javascript">
+            // Define some Dojo configuration
+            var dojoConfig = {
+                async: true,
+                parseOnLoad: true,
+                idDebug: true
+            };
+        </script>
+        <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.8.0/dojo/dojo.js"></script>
+        <script src="https://cdn.sdslabs.co.in/cdnjs/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+        <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.8.0/dijit/themes/claro/claro.css"/>
+        <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.8.0/dijit/themes/claro/document.css"/>
+        <script src='http://maps.google.com/maps?file=api&amp;v=2&amp;key=ABQIAAAAjpkAC9ePGem0lIq5XcMiuhR_wWLPFku8Ix9i2SXYRVK3e45q1BQUd_beF8dtzKET_EteAjPdGDwqpQ'></script>
+
+        <!-- OpenLayers -->
+        <script type="text/javascript" src="http://www.acuriousanimal.com/Openlayers-Cookbook/js/OpenLayers-2.12/OpenLayers.js"></script>
+        <link rel="stylesheet" href="http://www.acuriousanimal.com/Openlayers-Cookbook/js/OpenLayers-2.12/theme/default/style.css" type="text/css">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" type="text/css" href="http://www.acuriousanimal.com/Openlayers-Cookbook/css/cookbook.css"> 
+
+    </head>
+
+<style>
+    table.tm {
+        width: 100%;
+        height: 100%;
+    }
+    table.tm td.left, table.tm td.right {
+        border: 1px solid #ccc;
+        margin: 0;
+        padding: 0;
+    }
+
+    table.tm td.left {
+        width: 75%;
+    }
+    table.tm td.right {
+        width: 25%;
+        vertical-align: top;
+        padding: 5px;
+    }
+    table.tb {
+        border: 0;
+
+    }
+    body > table > tbody > tr > td.right > p:nth-child(1){
+        font-size: 1.5em;
+    }
+    body > table > tbody > tr > td.right > div > p{
+        font-size: 1.5em;
+    }
+
+    .nav {
+        text-align: center;
+        padding-bottom: 10px;
+        background: darkblue;
+    }
+    body > div.nav > h1 {
+        background: darkblue;
+        color: white;
+        margin-top: 0px;
+        padding-top: 18px;
+    }
+</style>
+<div class="nav">
+    <h1> Land management portal</h1>    
+</div>
+<div>
+<table class="tm">
+    <tr>
+        <td class="right">
+            <p>Select:</p>
+
+            <table class="tb">
+                <tr>
+                    <td><b>Select District:</b></td>
+                    <td>
+                        <select id="distSelection" data-dojo-type="dijit/form/Select" onChange="distChange()">
+                            <option value="Gurgaon-2">Gurgaon</option>
+                            <option value="Bhiwani-1">Bhiwani</option>
+                            <option value="Faridabad-4">Faridabad</option>
+                            <option value="Fatehabad-3">Fatehabad</option>                            
+                            <option value="Ambala-0">Ambala</option>
+                            <option value="Hisar-5">Hisar</option>
+                            <option value="Jhajjar-6">Jhajjar</option>
+                            <option value="Jind-7">Jind</option>
+                            <option value="Kaithal">Kaithal</option>
+                            <option value="Karnal">Karnal</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>Select Village:</b></td>
+                    <td>
+                        <select id="vilSelection" data-dojo-type="dijit/form/Select" onChange="vilChange()">
+                            <option value="Ambala">Ambala</option>
+                            <option value="Bharara">Bharara</option>
+                            <option value="Naraingarh">Naraingarh</option>                            
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>Select Feature:</b></td>
+                    <td>
+                        <select id="featureSelection" data-dojo-type="dijit/form/Select" onChange="featureChange()">
+                            <option selected="selected">Select</option>
+                            <option value="agriculture">Agriculture Land</option>
+                            <option value="Graveyard">Graveyard</option>
+                            <option value="idgah">Idgah</option>
+                            <option value="khankaha">Khankaha</option>
+                            <option value="Mosque">Mosque/Others</option>
+                            <option value="temple">Temple</option>
+                            <option value="imambara">Imambara</option>
+                            <option value="pond">Pond</option>
+                            <option value="madarasa">Madarasa</option>
+                            <option value="plot">House/Plot</option>
+                        </select>
+                    </td>
+                </tr>
+            </table>
+
+
+            <div class="tb">
+                <p> Info: </p>
+                <div id="info">
+                    
+                </div>
+                
+
+            </div>
+
+        </td>
+        <td class="left">
+            <div id="ch1_managing_layers" style="width: 100%; height: 500px;"></div>
+        </td>
+    </tr>
+</table>
+</div>
+
+<!-- The magic comes here -->
+<script type="text/javascript">
+    active_layers = [];
+    function distChange(){
+        district_layer = new OpenLayers.Layer.Vector();
+        map.addLayer(district_layer);
+        addSelectControl(map, district_layer);
+        /*gurgaon_layer = new OpenLayers.Layer.Vector("WFS", {
+                            strategies: [new OpenLayers.Strategy.BBOX()],
+                            protocol: new OpenLayers.Protocol.WFS({
+                                url: "http://localhost:8080/geoserver/wfs",
+                                featureType: "test",
+                                featureNS: "http://test.org.test"
+                            })
+                        });*/
+        district = document.getElementById("distSelection").value.split('-')[0];
+        index = document.getElementById("distSelection").value.split('-')[1];
+        ambala = `
+                <option selected="selected">Select</option>
+               <option value="Bharara">Bharara</option>
+               <option value="Naraingarh">Naraingarh</option>
+               <option value="Ambala">Ambala</option>
+               `;
+        bandhra = `
+                <option selected="selected">Select</option>
+                <option value="Bandhra">Bandhra</option>
+                <option value="Bhawani Kehra">Bhawani Kehra</option>
+                <option value="Bhiwani">Bhiwani</option>
+                <option value="Loharu">Dadri</option>
+                <option value="Shiwani">Shiwani</option>
+                <option value="Tosham">Tosham</option>
+                `;
+        gurgaon = `
+                <option value="Farrukhnagar">Farrukhnagar</option>
+                <option value="gurgaon">Gurgaon</option>
+                <option value="Manesar">Manesar</option>
+                `;                
+
+        villages = [ambala, bandhra, gurgaon];
+        console.log(active_layers);
+        for(var i = 0;i<active_layers.length;i++){
+            map.removeLayer(active_layers[i]);
+        }
+        active_layers = [];
+        switch(district){
+            case 'Gurgaon':
+                url = 'http://localhost:8080/geoserver/harayana/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=harayana:haryan_state&maxFeatures=50&outputFormat=application%2Fjson';
+                break;
+            case 'Ambala':
+                url = 'http://localhost:8080/geoserver/village/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=village:test&maxFeatures=50&outputFormat=application%2Fjson';
+                break;
+        }
+        $.ajax({
+            type: "GET",
+            url: url,
+            data: {},
+            beforeSend: function(xhr){xhr.setRequestHeader('Origin', 'http://localhost:8080');},
+            success: function(data){
+                drawDistrict(data);
+            }            
+        });
+        active_layers.push(district_layer);
+        document.getElementById("vilSelection").innerHTML=villages[index];
+
+    }
+
+    function drawDistrict(resp){
+        features = getFeatures(resp);
+        district_layer.addFeatures(features);
+        map.zoomToExtent(district_layer.getDataExtent());
+    }
+
+    function getFeatures(geojson){
+        reader = new OpenLayers.Format.GeoJSON();
+        reader.ignoreExtraDims = true;
+        return reader.read(geojson);
+    }
+    function httpGetAsync(theUrl, callback)
+    {
+        console.log(theUrl);
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.onreadystatechange = function() { 
+            if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+                callback(xmlHttp.responseText);
+        }
+        xmlHttp.open("GET", theUrl, true); // true for asynchronous 
+        xmlHttp.send(null);
+    }
+
+
+    function vilChange(){
+        console.log("Village change");
+        current_village = document.getElementById("vilSelection").value;
+        switch(current_village){
+            case "gurgaon":
+                url = 'http://localhost:8080/geoserver/harayana/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=harayana:234march&maxFeatures=50&outputFormat=application%2Fjson';
+                break;
+            case "Ambala":
+                url = 'http://localhost:8080/geoserver/harayana/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=harayana:234march&maxFeatures=50&outputFormat=application%2Fjson';
+                break;
+        }
+        $.ajax({
+            type: "GET",
+            url: url,
+            data: {},
+            beforeSend: function(xhr){xhr.setRequestHeader('Origin', 'http://localhost:8080');},
+            success: function(data){
+                drawVillage(data);
+            }            
+        });
+    }
+
+    function drawVillage(resp){
+        village_features = getFeatures(resp);
+        district_layer.removeAllFeatures();
+        district_layer.addFeatures(village_features);
+        map.zoomToExtent(district_layer.getDataExtent());
+        addSelectController(district_layer);
+    }
+    selected_features = [];
+    function featureChange(){
+        for(var j=0;j<selected_features.length;j++){
+            selectControl.unselect(selected_features[j]);
+        }
+        //select.removeFeatures(selected_features);
+        district = document.getElementById("vilSelection").value.split('-')[0];
+        var total_area = 0;
+        var count = 0;
+        for(var i =0;i<village_features.length; i++){
+            var feature = document.getElementById("featureSelection").value;
+            if (village_features[i].attributes.Prprty_typ == feature){
+                total_area += village_features[i].attributes.Shape_Area;
+                count +=1;
+                selectControl.select(village_features[i]);
+                selected_features.push(village_features[i]);
+            }
+        }
+        var res_html = '<tr><td> Count: </td><td>'+count.toString()+'</td></tr>';
+        res_html += '<tr><td> Total Area: </td><td>'+total_area.toString()+'</td></tr>';
+        document.getElementById("info").innerHTML ='<b><table>'+res_html+'</table></b>';
+    }
+    function addSelectController(layer){
+        selectControl = new OpenLayers.Control.SelectFeature(layer,
+        {
+            onSelect: onFeatureSelect,
+            onUnselect: onFeatureUnselect,
+            //hover: true
+        });
+        map.addControl(selectControl);
+        selectControl.activate();
+    }
+    function onFeatureSelect(feature){
+        available = feature.attributes;
+        
+        res_html = '';
+        for(key in available){
+            res_html += '<tr><td>'+key+':</td>'+'<td>'+available[key]+'</td>';
+        }
+        res_html = '<b><table>'+res_html+'</table></b>';
+
+        document.getElementById("info").innerHTML = res_html;       
+        
+    }
+
+    function onFeatureUnselect(feature){
+        document.getElementById("info").innerHTML = '';
+    }
+
+    // Create the map using the specified DOM element
+    var map = new OpenLayers.Map("ch1_managing_layers", {
+        allOverlays: true,
+        minZoomLevel: 8,
+        numZoomLevels: 25
+    });
+
+    // Add some OSM based layers using an array of URL sources
+    var arrayOSM = ["http://otile1.mqcdn.com/tiles/1.0.0/osm/${z}/${x}/${y}.jpg",
+        "http://otile2.mqcdn.com/tiles/1.0.0/osm/${z}/${x}/${y}.jpg",
+        "http://otile3.mqcdn.com/tiles/1.0.0/osm/${z}/${x}/${y}.jpg",
+        "http://otile4.mqcdn.com/tiles/1.0.0/osm/${z}/${x}/${y}.jpg"];
+    var arrayAerial = ["http://oatile1.mqcdn.com/tiles/1.0.0/sat/${z}/${x}/${y}.jpg",
+        "http://oatile2.mqcdn.com/tiles/1.0.0/sat/${z}/${x}/${y}.jpg",
+        "http://oatile3.mqcdn.com/tiles/1.0.0/sat/${z}/${x}/${y}.jpg",
+        "http://oatile4.mqcdn.com/tiles/1.0.0/sat/${z}/${x}/${y}.jpg"];
+
+    var baseAerial = new OpenLayers.Layer.WMS("Global Imagery",
+                    "http://maps.opengeo.org/geowebcache/service/wms", {
+                        layers: "bluemarble",
+                        format: "image/png8"
+                    }, {
+                        buffer: 0,
+                        visibility: false
+                    }
+                );
+    var baseOSM = new OpenLayers.Layer.WMS("OpenStreetMap WMS",
+                    "http://ows.terrestris.de/osm/service?",
+                    {layers: 'OSM-WMS'},
+                    {
+                        attribution: '&copy; terrestris GmbH & Co. KG <br>' +
+                            'Data &copy; OpenStreetMap ' +
+                            '<a href="http://www.openstreetmap.org/copyright/en"' +
+                            'target="_blank">contributors<a>'
+                    }
+                );
+
+    ambala_vector = new OpenLayers.Layer.Vector("Tehsils",{
+                        strategies: [new OpenLayers.Strategy.BBOX()],
+                        protocol: new OpenLayers.Protocol.WFS({
+                            version: "1.1.0",
+                            url: "http://localhost:8080/geoserver/wfs",
+                            featureType: "test",
+                            featureNS:"http://test.org.test",
+                            srsName: "EPSG:4326"
+                        })
+                    });
+
+    info = new OpenLayers.Control.WMSGetFeatureInfo({
+            url: 'http://localhost:8080/geoserver/harayana/wms',
+            title: 'Identify features by clicking',
+            queryVisible: true,
+            eventListeners: {
+                getfeatureinfo: function(event) {                    
+                    iframe = document.getElementById("info");
+                    iframe.contentWindow.document.open();
+                    iframe.contentWindow.document.write(event.text);
+                    iframe.contentWindow.document.close();
+                }
+            }
+        });
+    select = new OpenLayers.Layer.Vector("Selection", {
+        styleMap: new OpenLayers.Style(OpenLayers.Feature.Vector.style["select"])
+    });
+
+//http://gis.stackexchange.com/questions/66738/how-can-i-do-feature-selection-on-wms-layer-added-jsfiddle-example
+    var gphy = new OpenLayers.Layer.Google(
+                "Google Physical",
+                {type: G_PHYSICAL_MAP}
+            );
+            var gmap = new OpenLayers.Layer.Google(
+                "Google Streets", // the default
+                {numZoomLevels: 20}
+            );
+            var ghyb = new OpenLayers.Layer.Google(
+                "Google Hybrid",
+                {type: G_HYBRID_MAP, numZoomLevels: 20}
+            );
+            var gsat = new OpenLayers.Layer.Google(
+                "Google Satellite",
+                {type: G_SATELLITE_MAP, numZoomLevels: 22}
+            );
+
+
+    //map.addLayers([ghyb, select]);    
+    map.addLayers([gmap, ghyb, select]);
+
+
+    addSelectControl(map, ambala_vector);
+        // Add LayerSwitcher control
+    map.addControl(new OpenLayers.Control.LayerSwitcher({ascending: false}));
+    //map.addControl(info);
+    //info.activate();
+    var mousePositionCtrl = new OpenLayers.Control.MousePosition({
+        prefix: '<a target="_blank" ' +
+            'href="http://spatialreference.org/ref/epsg/4326/">' +
+            'EPSG:4326</a><b> coordinates: '
+        }
+    );
+    map.addControl(mousePositionCtrl);
+    mousePositionCtrl.activate();
+
+    var vector_style = new OpenLayers.Style({
+            'fillColor': '#ff0000',
+            'strokeColor': '#ff0000',
+            'strokeWidth': 4
+            });
+
+    var vector_style_map = new OpenLayers.StyleMap({
+            'default': vector_style
+            });
+
+    //set the style for both the Hover & Select
+    select.styleMap = vector_style_map;
+    // Center the view at some place
+    map.setCenter(new OpenLayers.LonLat(77, 29), 4);
+    
+    function addSelectControl(map,layer){
+        control = new OpenLayers.Control.GetFeature({
+            protocol: new OpenLayers.Protocol.WFS(layer.protocol),        
+            multipleKey: "shiftKey",
+            toggleKey: "ctrlKey"
+        });
+
+        control.events.register("featureselected", this, function (e) {
+            console.log(e.feature);
+            console.log("comning here");
+            select.addFeatures([e.feature]);
+        });
+        control.events.register("featureunselected", this, function (e) {
+            select.removeFeatures([e.feature]);
+        });
+
+        map.addControl(control);
+        control.activate();
+    }
+    
+</script>
+</html>

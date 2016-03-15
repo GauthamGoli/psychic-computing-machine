@@ -18,7 +18,7 @@
         <script src="https://cdn.sdslabs.co.in/cdnjs/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
         <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.8.0/dijit/themes/claro/claro.css"/>
         <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.8.0/dijit/themes/claro/document.css"/>
-        <script src='http://maps.google.com/maps?file=api&amp;v=2&amp;key=ABQIAAAAjpkAC9ePGem0lIq5XcMiuhR_wWLPFku8Ix9i2SXYRVK3e45q1BQUd_beF8dtzKET_EteAjPdGDwqpQ'></script>
+        <script src="http://maps.google.com/maps/api/js?v=3&amp;sensor=false"></script>
 
         <!-- OpenLayers -->
         <script type="text/javascript" src="http://www.acuriousanimal.com/Openlayers-Cookbook/js/OpenLayers-2.12/OpenLayers.js"></script>
@@ -382,7 +382,7 @@
 //http://gis.stackexchange.com/questions/66738/how-can-i-do-feature-selection-on-wms-layer-added-jsfiddle-example
     var gphy = new OpenLayers.Layer.Google(
                 "Google Physical",
-                {type: G_PHYSICAL_MAP}
+                {type: google.maps.MapTypeId.TERRAIN}
             );
             var gmap = new OpenLayers.Layer.Google(
                 "Google Streets", // the default
@@ -390,16 +390,17 @@
             );
             var ghyb = new OpenLayers.Layer.Google(
                 "Google Hybrid",
-                {type: G_HYBRID_MAP, numZoomLevels: 20}
+                {type: google.maps.MapTypeId.HYBRID, numZoomLevels: 20}
             );
             var gsat = new OpenLayers.Layer.Google(
                 "Google Satellite",
-                {type: G_SATELLITE_MAP, numZoomLevels: 22}
+                {type: google.maps.MapTypeId.SATELLITE, numZoomLevels: 22}
             );
 
 
     //map.addLayers([ghyb, select]);    
-    map.addLayers([gmap, ghyb, select]);
+    map.addLayers([gmap, select]);
+    //map.addLayers([baseAerial, baseOSM, select]);
 
 
     addSelectControl(map, ambala_vector);
@@ -429,7 +430,7 @@
     //set the style for both the Hover & Select
     select.styleMap = vector_style_map;
     // Center the view at some place
-    map.setCenter(new OpenLayers.LonLat(77, 29), 4);
+    map.setCenter(new OpenLayers.LonLat(77, 29).transform('EPSG:4326', 'EPSG:3857'), 4);
     
     function addSelectControl(map,layer){
         control = new OpenLayers.Control.GetFeature({

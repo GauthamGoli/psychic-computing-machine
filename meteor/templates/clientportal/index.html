@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>OpenLayers Cookbook - Antonio Santiago</title>
+        <title>Land Management Portal</title>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
         <!-- Dojo -->
@@ -70,11 +70,25 @@
         margin-top: 0px;
         padding-top: 18px;
     }
+    .tb {
+    border-collapse: collapse;
+    }
+
+    table, th, td {
+    border: 1px solid black;
+    }    
+    th, td{
+        padding: 15px;
+    }
+    .tb-info{
+        height: 350px;
+        overflow: auto;
+    }
 </style>
 <div class="nav">
     <h1> Land management portal</h1>    
 </div>
-<div>
+<div style="overflow: auto; max-height: 700px;">
 <table class="tm">
     <tr>
         <td class="right">
@@ -129,7 +143,7 @@
             </table>
 
 
-            <div class="tb">
+            <div class="tb-info">
                 <p> Info: </p>
                 <div id="info">
                     
@@ -244,7 +258,7 @@
                 url = 'http://localhost:8080/geoserver/harayana/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=harayana:234march&maxFeatures=50&outputFormat=application%2Fjson';
                 break;
             case "Ambala":
-                url = 'http://localhost:8080/geoserver/harayana/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=harayana:234march&maxFeatures=50&outputFormat=application%2Fjson';
+                url = 'http://localhost:8080/geoserver/ambalanew/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=ambalanew:234-03-2016&maxFeatures=50&outputFormat=application%2Fjson';
                 break;
         }
         $.ajax({
@@ -276,7 +290,7 @@
         var count = 0;
         for(var i =0;i<village_features.length; i++){
             var feature = document.getElementById("featureSelection").value;
-            if (village_features[i].attributes.Prprty_typ == feature){
+            if (village_features[i].attributes.Prprty_typ.toString().toLowerCase() == feature.toString().toLowerCase()){
                 total_area += village_features[i].attributes.Shape_Area;
                 count +=1;
                 selectControl.select(village_features[i]);
@@ -285,7 +299,7 @@
         }
         var res_html = '<tr><td> Count: </td><td>'+count.toString()+'</td></tr>';
         res_html += '<tr><td> Total Area: </td><td>'+total_area.toString()+'</td></tr>';
-        document.getElementById("info").innerHTML ='<b><table>'+res_html+'</table></b>';
+        document.getElementById("info").innerHTML ='<b><table class="info">'+res_html+'</table></b>';
     }
     function addSelectController(layer){
         selectControl = new OpenLayers.Control.SelectFeature(layer,
@@ -399,7 +413,7 @@
 
 
     //map.addLayers([ghyb, select]);    
-    map.addLayers([gmap, select]);
+    map.addLayers([gsat, select]);
     //map.addLayers([baseAerial, baseOSM, select]);
 
 
